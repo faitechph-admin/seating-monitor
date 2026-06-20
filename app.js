@@ -260,20 +260,9 @@ function exportRecords(period) {
     return;
   }
 
-  const maxSections = Math.max(...filtered.map((r) => r.perSection.length));
-  const header = ["Event Name", "Date", "Time", "Total Seats", "Occupied", "Reserved", "Empty"];
-  for (let i = 0; i < maxSections; i++) {
-    header.push(`Section ${i + 1} Name`, `Section ${i + 1} Occupied`, `Section ${i + 1} Reserved`, `Section ${i + 1} Empty`);
-  }
+  const header = ["Event Name", "Date", "Time", "Total Seats", "Occupied (incl. Reserved)", "Reserved", "Empty"];
 
-  const rows = filtered.map((r) => {
-    const row = [r.eventName, r.date, r.time, r.total, r.occupied, r.reserved, r.empty];
-    for (let i = 0; i < maxSections; i++) {
-      const s = r.perSection[i];
-      row.push(s ? s.name : "", s ? s.occupied : "", s ? s.reserved : "", s ? s.empty : "");
-    }
-    return row;
-  });
+  const rows = filtered.map((r) => [r.eventName, r.date, r.time, r.total, r.occupied + r.reserved, r.reserved, r.empty]);
 
   const sheetName = period === "monthly" ? "Monthly" : period === "quarterly" ? "Quarterly" : "Annual";
   const stamp = now.toISOString().slice(0, 10);
