@@ -238,52 +238,10 @@ function deleteRecord(id) {
 }
 
 function exportRecords() {
-  if (state.records.length === 0) {
-    flashSaveStatus('No saved records yet. Use "Save event record" first, then export.');
-    return;
-  }
-
-  const printArea = buildPrintableReport();
-  document.body.appendChild(printArea);
-  window.print();
-  // Remove the printable report once the print dialog closes (or is cancelled).
-  // A short delay covers both desktop and mobile print flows.
-  setTimeout(() => {
-    if (printArea.parentNode) printArea.parentNode.removeChild(printArea);
-  }, 1000);
   setState({ modal: null });
-}
-
-function buildPrintableReport() {
-  const stamp = new Date().toLocaleString();
-  const rows = state.records.map((r) =>
-    el("tr", {}, [
-      el("td", {}, r.eventName),
-      el("td", {}, r.date),
-      el("td", {}, r.time),
-      el("td", {}, String(r.total)),
-      el("td", {}, String(r.occupied + r.reserved)),
-      el("td", {}, String(r.reserved)),
-      el("td", {}, String(r.empty)),
-    ])
-  );
-
-  return el("div", { id: "print-report" }, [
-    el("h1", {}, "Seating Monitor — Event Records"),
-    el("div", { class: "print-meta" }, `Generated ${stamp} · ${state.records.length} record${state.records.length === 1 ? "" : "s"}`),
-    el("table", {}, [
-      el("thead", {}, el("tr", {}, [
-        el("th", {}, "Event Name"),
-        el("th", {}, "Date"),
-        el("th", {}, "Time"),
-        el("th", {}, "Total Seats"),
-        el("th", {}, "Occupied (incl. Reserved)"),
-        el("th", {}, "Reserved"),
-        el("th", {}, "Empty"),
-      ])),
-      el("tbody", {}, rows),
-    ]),
-  ]);
+  // Let the modal actually close and the DOM repaint before invoking print,
+  // otherwise some browsers may still capture the closing overlay.
+  setTimeout(() => window.print(), 50);
 }
 
 // ---------------- Rendering ----------------
@@ -347,6 +305,9 @@ function renderHeader() {
     ]),
   ]);
 
+  const eventName = state.eventName.trim() || "Untitled event";
+  const printEventLine = el("div", { class: "print-event-line" }, `${eventName} — ${state.eventDate} ${state.eventTime}`);
+
   return el("div", { class: "header" }, [
     el("div", { class: "header-row" }, [
       el("div", { class: "header-title" }, "Seating Monitor"),
@@ -356,6 +317,7 @@ function renderHeader() {
       ]),
     ]),
     eventFields,
+    printEventLine,
     el("div", { class: "stats-row" }, [
       renderStat("Occupied", counts.occupied, colors.occupied, true),
       renderStat("Reserved", counts.reserved, colors.reserved, true),
