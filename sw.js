@@ -1,4 +1,4 @@
-const CACHE_NAME = "seating-monitor-v5";
+const CACHE_NAME = "seating-monitor-v6";
 const ASSETS = [
   "./index.html",
   "./app.js",
