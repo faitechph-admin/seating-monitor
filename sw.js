@@ -1,8 +1,7 @@
-const CACHE_NAME = "seating-monitor-v1";
+const CACHE_NAME = "seating-monitor-v4";
 const ASSETS = [
   "./index.html",
   "./app.js",
-  "./xlsx-writer.js",
   "./storage.js",
   "./manifest.json",
   "./icons/icon-192.png",
