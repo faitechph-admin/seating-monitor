@@ -127,6 +127,7 @@
     padding: 8px 10px;
     font-size: 12px;
   }
+  .print-event-line { display: none; }
 
   .stats-row {
     display: flex;
@@ -311,6 +312,7 @@
     font-weight: 600;
   }
   .btn-primary:active { background: var(--accent-press); }
+  .btn:disabled { opacity: 0.4; pointer-events: none; }
 
   /* Bottom sheets */
   .sheet-overlay {
@@ -536,13 +538,92 @@
     margin-left: 10px;
   }
   .delete-record-btn:active { color: var(--accent); }
+
+  /* Printable report uses the live app DOM; see @media print rules below */
+
+  @page {
+    size: landscape;
+    margin: 8mm;
+  }
+
+  @media print {
+    /* Force light, ink-friendly colors regardless of which theme is active on screen */
+    html, body { background: #ffffff !important; }
+    #app { background: #ffffff !important; width: 100%; }
+
+    /* Hide interactive/editing chrome that has no place on a printed page */
+    .header-links,
+    .event-name-input,
+    .event-datetime-row,
+    .row-controls,
+    .footer,
+    .offline-badge,
+    .sheet-overlay {
+      display: none !important;
+    }
+    .print-event-line {
+      display: block !important;
+      font-size: 13px;
+      font-weight: 500;
+      color: #111111 !important;
+      margin-bottom: 10px;
+    }
+
+    .header {
+      position: static;
+      background: #ffffff !important;
+      backdrop-filter: none;
+      border-bottom: 2px solid #000000;
+    }
+    .header-title, .stat-value, .stat-label, .section-name, .section-count,
+    .legend-label, .stage-label, .seat { color: #111111 !important; }
+    .stat-value { text-shadow: none !important; }
+    .stat { border: 1px solid #999999; background: #ffffff !important; }
+
+    .floor-wrap {
+      overflow: visible;
+      padding: 12px 0 0;
+      width: 100%;
+      max-width: none;
+    }
+    .floor-inner {
+      width: 100%;
+      max-width: none;
+      min-width: 0 !important;
+    }
+    .section-block {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .seat-row {
+      justify-content: center;
+      gap: 6px !important;
+    }
+    .seat {
+      width: auto !important;
+      flex: 1 1 0;
+      aspect-ratio: 1.3 / 1;
+      max-width: 64px;
+      font-size: 13px !important;
+      box-shadow: none !important;
+      border: 1px solid #999999 !important;
+    }
+    .seat.filled { border: 1px solid #333333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    .sections-row {
+      width: 100%;
+      flex-wrap: nowrap !important;
+      align-items: stretch;
+      gap: 20px;
+    }
+    .seat-row { width: 100%; }
+  }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="offline-badge" class="offline-badge">You're offline — everything still works and saves on this device</div>
 
-<script src="xlsx-writer.js"></script>
 <script src="storage.js"></script>
 <script src="app.js"></script>
 </body>
