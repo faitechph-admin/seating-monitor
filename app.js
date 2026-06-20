@@ -237,37 +237,53 @@ function deleteRecord(id) {
   setState({ records });
 }
 
-function exportRecords(period) {
-  const now = new Date();
-  const filtered = state.records.filter((r) => {
-    const d = new Date(r.date);
-    if (period === "monthly") {
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    }
-    if (period === "quarterly") {
-      const q = Math.floor(now.getMonth() / 3);
-      const rq = Math.floor(d.getMonth() / 3);
-      return d.getFullYear() === now.getFullYear() && rq === q;
-    }
-    if (period === "annually") {
-      return d.getFullYear() === now.getFullYear();
-    }
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    flashSaveStatus(`No saved records found for this ${period.replace("ly", "")} period.`);
+function exportRecords() {
+  if (state.records.length === 0) {
+    flashSaveStatus('No saved records yet. Use "Save event record" first, then export.');
     return;
   }
 
-  const header = ["Event Name", "Date", "Time", "Total Seats", "Occupied (incl. Reserved)", "Reserved", "Empty"];
-
-  const rows = filtered.map((r) => [r.eventName, r.date, r.time, r.total, r.occupied + r.reserved, r.reserved, r.empty]);
-
-  const sheetName = period === "monthly" ? "Monthly" : period === "quarterly" ? "Quarterly" : "Annual";
-  const stamp = now.toISOString().slice(0, 10);
-  MiniXlsx.downloadXlsx([{ name: sheetName, rows: [header, ...rows] }], `seating-${period}-${stamp}.xlsx`);
+  const printArea = buildPrintableReport();
+  document.body.appendChild(printArea);
+  window.print();
+  // Remove the printable report once the print dialog closes (or is cancelled).
+  // A short delay covers both desktop and mobile print flows.
+  setTimeout(() => {
+    if (printArea.parentNode) printArea.parentNode.removeChild(printArea);
+  }, 1000);
   setState({ modal: null });
+}
+
+function buildPrintableReport() {
+  const stamp = new Date().toLocaleString();
+  const rows = state.records.map((r) =>
+    el("tr", {}, [
+      el("td", {}, r.eventName),
+      el("td", {}, r.date),
+      el("td", {}, r.time),
+      el("td", {}, String(r.total)),
+      el("td", {}, String(r.occupied + r.reserved)),
+      el("td", {}, String(r.reserved)),
+      el("td", {}, String(r.empty)),
+    ])
+  );
+
+  return el("div", { id: "print-report" }, [
+    el("h1", {}, "Seating Monitor — Event Records"),
+    el("div", { class: "print-meta" }, `Generated ${stamp} · ${state.records.length} record${state.records.length === 1 ? "" : "s"}`),
+    el("table", {}, [
+      el("thead", {}, el("tr", {}, [
+        el("th", {}, "Event Name"),
+        el("th", {}, "Date"),
+        el("th", {}, "Time"),
+        el("th", {}, "Total Seats"),
+        el("th", {}, "Occupied (incl. Reserved)"),
+        el("th", {}, "Reserved"),
+        el("th", {}, "Empty"),
+      ])),
+      el("tbody", {}, rows),
+    ]),
+  ]);
 }
 
 // ---------------- Rendering ----------------
@@ -564,21 +580,15 @@ function renderExportSheet() {
       el("div", { class: "sheet-subtitle" },
         count === 0
           ? 'No event records saved yet. Use "Save event record" first, then export.'
-          : `${count} saved record${count === 1 ? "" : "s"} on this device. Choose a period to export.`
+          : `${count} saved record${count === 1 ? "" : "s"} on this device.`
       ),
 
-      el("button", { class: "export-option", onclick: () => exportRecords("monthly") }, [
-        el("div", { class: "export-option-title" }, "Monthly"),
-        el("span", { class: "export-option-sub" }, "Records from this calendar month"),
-      ]),
-      el("button", { class: "export-option", onclick: () => exportRecords("quarterly") }, [
-        el("div", { class: "export-option-title" }, "Quarterly"),
-        el("span", { class: "export-option-sub" }, "Records from this calendar quarter"),
-      ]),
-      el("button", { class: "export-option", onclick: () => exportRecords("annually") }, [
-        el("div", { class: "export-option-title" }, "Annually"),
-        el("span", { class: "export-option-sub" }, "Records from this calendar year"),
-      ]),
+      el("button", {
+        class: "btn btn-primary",
+        style: { width: "100%", marginBottom: "16px" },
+        disabled: count === 0,
+        onclick: () => exportRecords(),
+      }, "Export as PDF"),
 
       count > 0 ? el("div", { class: "records-list" }, recordRows) : null,
 
